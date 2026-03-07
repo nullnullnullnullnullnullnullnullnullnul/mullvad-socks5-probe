@@ -1,5 +1,5 @@
-#ifndef MULLVAD_PROXY_CHECKER_H
-#define MULLVAD_PROXY_CHECKER_H
+#ifndef MULLVAD_RELAY_CHECKER_H
+#define MULLVAD_RELAY_CHECKER_H
 
 #include <curl/curl.h>
 #include <mutex>
@@ -24,11 +24,11 @@ struct TestResult
   std::string details;
 };
 
-class MullvadProxyChecker
+class MullvadRelayChecker
 {
 public:
-  MullvadProxyChecker();
-  ~MullvadProxyChecker();
+  MullvadRelayChecker();
+  ~MullvadRelayChecker();
   bool isMullvadActive();
   std::vector<std::string> bulkTestProxies(unsigned int maxWorkers = 20);
   void saveWorkingProxies(const std::vector<std::string> &proxies,

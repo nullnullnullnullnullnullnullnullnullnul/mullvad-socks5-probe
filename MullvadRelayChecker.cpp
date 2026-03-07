@@ -1,20 +1,20 @@
-#include "MullvadProxyChecker.h"
+#include "MullvadRelayChecker.h"
 #include <fmt/base.h>
 #include <fmt/format.h>
 #include <fstream>
 #include <iostream>
 
-MullvadProxyChecker::MullvadProxyChecker()
+MullvadRelayChecker::MullvadRelayChecker()
 {
   curl_global_init(CURL_GLOBAL_DEFAULT);
 }
 
-MullvadProxyChecker::~MullvadProxyChecker()
+MullvadRelayChecker::~MullvadRelayChecker()
 {
   curl_global_cleanup();
 }
 
-bool MullvadProxyChecker::isMullvadActive()
+bool MullvadRelayChecker::isMullvadActive()
 {
   CURL *curl;
   CURLcode res;
@@ -59,14 +59,14 @@ bool MullvadProxyChecker::isMullvadActive()
   return isActive;
 }
 
-size_t MullvadProxyChecker::WriteCallback(void *contents, size_t size,
+size_t MullvadRelayChecker::WriteCallback(void *contents, size_t size,
                                          size_t nmemb, void *userp)
 {
   ((std::string *)userp)->append((char *)contents, size * nmemb);
   return size * nmemb;
 }
 
-std::vector<ProxyInfo> MullvadProxyChecker::fetchProxies()
+std::vector<ProxyInfo> MullvadRelayChecker::fetchProxies()
 {
   std::vector<ProxyInfo> proxies;
   CURL *curl;
@@ -126,7 +126,7 @@ std::vector<ProxyInfo> MullvadProxyChecker::fetchProxies()
   return proxies;
 }
 
-TestResult MullvadProxyChecker::testSocks5Proxy(const ProxyInfo &proxy)
+TestResult MullvadRelayChecker::testSocks5Proxy(const ProxyInfo &proxy)
 {
   CURL *curl;
   CURLcode res;
@@ -171,7 +171,7 @@ TestResult MullvadProxyChecker::testSocks5Proxy(const ProxyInfo &proxy)
 }
 
 std::vector<std::string>
-MullvadProxyChecker::bulkTestProxies(unsigned int maxWorkers)
+MullvadRelayChecker::bulkTestProxies(unsigned int maxWorkers)
 {
   fmt::print("[*] Fetching proxy list...\n");
   std::vector<ProxyInfo> proxies = fetchProxies();
@@ -235,7 +235,7 @@ MullvadProxyChecker::bulkTestProxies(unsigned int maxWorkers)
   return workingProxies;
 }
 
-void MullvadProxyChecker::saveWorkingProxies(
+void MullvadRelayChecker::saveWorkingProxies(
     const std::vector<std::string> &proxies, const std::string &filename)
 {
   std::ofstream outFile(filename);

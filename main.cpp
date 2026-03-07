@@ -1,11 +1,11 @@
-#include "MullvadProxyChecker.h"
+#include "MullvadRelayChecker.h"
 #include <chrono>
 #include <fmt/base.h>
 #include <fmt/format.h>
 
 int main()
 {
-  MullvadProxyChecker checker;
+  MullvadRelayChecker checker;
   if (!checker.isMullvadActive()) {
     fmt::print("[!] ERROR: Mullvad proxies only work while connected to Mullvad VPN.\n");
     fmt::print("[*] Quitting...\n");
