@@ -1,37 +1,110 @@
-# Mullvad Relay Checker
+# mullvad-socks5-probe
 
-## Description
-mullvad-relay-checker is a C++17 utility designed to scrape, test, and save working SOCKS5 proxies from the Mullvad WireGuard API. It is specifically built to operate while connected to the Mullvad VPN, ensuring that only active and functional proxies are collected. The tool uses multithreading to rapidly verify proxies against an external IP check service.
+[![ci](https://github.com/nullnullnullnullnullnullnullnullnullnul/mullvad-socks5-probe/actions/workflows/ci.yml/badge.svg)](https://github.com/nullnullnullnullnullnullnullnullnullnul/mullvad-socks5-probe/actions/workflows/ci.yml)
+[![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://en.cppreference.com/w/cpp/17)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Business Logic
-1. VPN Verification: Before fetching proxies, the tool verifies that the user is actively connected to Mullvad VPN by checking the https://am.i.mullvad.net/json endpoint.
-2. Proxy Fetching: Scrapes a list of available WireGuard relays from the official Mullvad API (https://api.mullvad.net/www/relays/wireguard/).
-3. Multithreaded Testing: Spawns multiple threads (configurable, default 20, or up to 50 as seen in main.cpp) to concurrently test each proxy. It routes an HTTP request to http://httpbin.org/ip through the scraped SOCKS5 proxies.
-4. Results Storage: Successfully tested proxies are collected and saved to a specified output file (default: proxies.txt).
+Concurrent SOCKS5 health probe for Mullvad VPN relays.
 
-## Public API
-The MullvadRelayChecker class provides the following public interface:
+## Overview
 
-- `MullvadRelayChecker()`: Constructor that initializes the global libcurl state.
-- `~MullvadRelayChecker()`: Destructor that cleans up the global libcurl state.
-- `bool isMullvadActive()`: Checks if the current network connection is routed through Mullvad VPN. Returns true if active.
-- `std::vector<std::string> bulkTestProxies(unsigned int maxWorkers = 20)`: Fetches proxies from the Mullvad API and tests them using up to maxWorkers threads. Returns a list of working proxy addresses (format: host:port).
-- `void saveWorkingProxies(const std::vector<std::string> &proxies, const std::string &filename = "proxies.txt")`: Saves a vector of working proxy strings to the specified text file.
+Queries Mullvad's public WireGuard relay API, then verifies end-to-end SOCKS5 connectivity on each relay using a fixed-size worker pool. Intended for Mullvad subscribers to identify which SOCKS5 endpoints from the relay set are currently functional from their location.
 
-## Build Instructions
-To build the project, run the following commands:
+The tool operates exclusively against the public endpoints published by Mullvad (`api.mullvad.net/www/relays/wireguard/`, `am.i.mullvad.net/json`) and requires an active Mullvad VPN connection: SOCKS5 relays are only routable through the Mullvad tunnel.
+
+## Build
+
+### Prerequisites
+
+- CMake `>= 3.16`
+- A C++17 compiler (GCC 7+, Clang 6+)
+- Recommended: system packages
+  - `libfmt-dev`
+  - `libcurl4-openssl-dev`
+  - `nlohmann-json3-dev`
+
+Missing system libraries are pulled in via CMake `FetchContent` as a fallback.
+
+### Build commands
 
 ```bash
-mkdir build
-cd build
-cmake ..
-make
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
 ```
 
-## Prerequisites
-- A C++ Compiler (GCC or Clang)
-- CMake (version 3.10 or higher)
-- Make
-- fmt library
-- libcurl
-- nlohmann_json
+The resulting binary is `build/mullvad_socks5_probe`.
+
+## Usage
+
+```text
+Usage: mullvad_socks5_probe [options]
+
+Probe SOCKS5 connectivity on Mullvad VPN relays.
+
+Options:
+  -w, --workers N       number of concurrent probe workers (default: 20)
+  -o, --output FILE     output file for working relays (default: relays.txt)
+      --no-vpn-check    skip the active-VPN precondition check
+  -h, --help            show this message and exit
+```
+
+### Example
+
+```bash
+./build/mullvad_socks5_probe --workers 30 --output socks5-up.txt
+```
+
+Sample output:
+
+```text
+[*] Mullvad VPN is active.
+[*] Fetching relay list...
+[*] Fetched 412 relays. Probing with 30 workers...
+[+] se-sto-wg-001.relays.mullvad.net:1080 | IP: 185.213.155.74
+[-] de-fra-wg-007.relays.mullvad.net:1080 | Error: Operation timeout
+...
+
+[*] Working: 387/412
+[*] Saved 387 working relays to socks5-up.txt
+[*] Total execution time: 14.32 seconds.
+```
+
+The output file contains one `host:port` entry per working relay, one per line.
+
+## Quality
+
+### Formatting
+
+```bash
+find src include -type f \( -name '*.cpp' -o -name '*.h' \) -print0 \
+  | xargs -0 clang-format -i
+```
+
+CI enforces `clang-format` and fails on diffs.
+
+### Static analysis
+
+A `.clang-tidy` configuration is included. Run locally with:
+
+```bash
+cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build build
+find src -name '*.cpp' -print0 | xargs -0 clang-tidy -p build
+```
+
+`clang-tidy` is not wired into CI to keep the pipeline fast; contributors are expected to run it locally before opening PRs.
+
+## Conventions
+
+- **Commits**: [Conventional Commits](https://www.conventionalcommits.org/) (`feat`, `fix`, `refactor`, `docs`, `chore`, `ci`, ...).
+- **Branching**: `main` is the only long-lived branch. Changes land on topic branches (`feat/<topic>`, `fix/<topic>`, `chore/<topic>`) via PR.
+- **PRs**: CI must be green. Squash merge.
+
+## Roadmap
+
+- Unit tests for the HTTP helper and the JSON parsing paths (no test framework wired yet).
+- Optional structured output (JSON / NDJSON) alongside the current `host:port` plain-text format.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
