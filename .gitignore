@@ -1,1 +1,32 @@
+# Build
 build/
+build-*/
+out/
+cmake-build-*/
+_deps/
+
+# Compiler artifacts
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.exe
+*.dSYM/
+
+# Tool output
+relays.txt
+proxies.txt
+
+# Editors / IDEs
+.vscode/
+.idea/
+.cache/
+.ccls-cache/
+compile_commands.json
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
